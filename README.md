@@ -18,7 +18,7 @@ To create the images:
 
 Then the WASP image is ready. I then saved the config and started from scratch for the Lantiq image, which will also contain the WASP image plus some firmware files from the orginal AVM software. For that task I copied some code from freetz for the unquashfs-avm-be utility and created a new tool fritzboximage-downloadextractor (in tools). It also installs the vdsl firmware from the AVM image:
 
-8. `cp .config .config_7490wasp`
+8. `mv .config .config_7490wasp`
 9. `make menuconfig` - Select Lantiq as target system, subtarget XRX200 and target profile AVM FRITZ!Box 7490. To enable LUCI web GUI, Enable LUCI->Collections->luci (with Uhttpd), the minimum stuff is preselected.
 10. `make`
 
