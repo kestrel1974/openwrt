@@ -229,6 +229,28 @@ define U-Boot/easy50712_norspl
   DEPENDS+=@BROKEN
 endef
 
+define U-Boot/zxv10h201l_nor
+  NAME:=ZTE H201L (NOR)
+  SOC:=ar9
+  BUILD_SUBTARGET:=xway
+  BUILD_DEVICES:=zte_h201l
+endef
+
+define U-Boot/zxv10h201l_ram
+  NAME:=ZTE H201L (RAM)
+  SOC:=ar9
+  BUILD_SUBTARGET:=xway
+  BUILD_DEVICES:=zte_h201l
+  DDR_SETTINGS:=board/zte/zxv10h201l/ddr_settings_uart.h
+endef
+
+define U-Boot/zxv10h201l_zte
+  NAME:=ZTE H201L (ZTE)
+  SOC:=ar9
+  BUILD_SUBTARGET:=xway
+  BUILD_DEVICES:=zte_h201l
+endef
+
 define U-Boot/easy80920_ram
   NAME:=Lantiq EASY80920 (RAM)
   BUILD_SUBTARGET:=xrx200
@@ -332,6 +354,7 @@ define U-Boot/vgv7519_ram
   DDR_SETTINGS:=board/arcadyan/vgv7519/ddr_settings.h
 endef
 
+
 UBOOT_TARGETS:= \
 	arv4519pw_ram arv4519pw_nor arv4519pw_brn \
 	arv7506pw11_ram arv7506pw11_nor arv7506pw11_brn \
@@ -349,7 +372,8 @@ UBOOT_TARGETS:= \
 	fb3370_eva fb3370_ram fb3370_sfspl \
 	p2812hnufx_ram p2812hnufx_nandspl \
 	vgv7510kw22_brn vgv7510kw22_nor vgv7510kw22_ram \
-	vgv7519_brn vgv7519_nor vgv7519_ram
+	vgv7519_brn vgv7519_nor vgv7519_ram \
+	zxv10h201l_nor zxv10h201l_ram zxv10h201l_zte
 
 define CompressVR9Firmware
 	$(STAGING_DIR_HOST)/bin/lzma e \
