@@ -38,6 +38,10 @@ lantiq_setup_interfaces()
 	avm,fritz3370-rev2-hynix|\
 	avm,fritz3370-rev2-micron|\
 	avm,fritz3390|\
+	avm,fritz5490)
+		ucidef_add_switch "switch0" \
+			"0:lan:3" "1:lan:4" "2:lan:2" "4:lan:1" "5:lan:5" "6t@eth0"
+		;;
 	avm,fritz7360sl|\
 	avm,fritz7360-v2|\
 	avm,fritz7362sl)
@@ -143,6 +147,7 @@ lantiq_setup_macs()
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary urlader 0xa91)" 1)
 		;;
 	avm,fritz3390|\
+	avm,fritz5490|\
 	avm,fritz7490|\
 	avm,fritz7362sl)
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
