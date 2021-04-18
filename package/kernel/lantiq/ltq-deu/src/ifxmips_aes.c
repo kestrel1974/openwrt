@@ -671,20 +671,15 @@ int ctr_basic_aes_encrypt(struct blkcipher_desc *desc,
     struct aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
     struct blkcipher_walk walk;
     int err;
-    unsigned int enc_bytes;
 
     blkcipher_walk_init(&walk, dst, src, nbytes);
     err = blkcipher_walk_virt(desc, &walk);
 
-    while ((nbytes = enc_bytes = walk.nbytes)) {
-            u8 *iv = walk.iv;
-            enc_bytes -= (nbytes % AES_BLOCK_SIZE);
-            ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
-                       iv, enc_bytes, CRYPTO_DIR_ENCRYPT, 0);
-        nbytes &= AES_BLOCK_SIZE - 1;
-        err = blkcipher_walk_done(desc, &walk, nbytes);
+    while ((nbytes = walk.nbytes)) {
+        ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr,
+                        walk.iv, nbytes, CRYPTO_DIR_ENCRYPT, 0);
+        err = blkcipher_walk_done(desc, &walk, 0);
     }
-
     return err;
 }
 
@@ -704,18 +699,14 @@ int ctr_basic_aes_decrypt(struct blkcipher_desc *desc,
     struct aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
     struct blkcipher_walk walk;
     int err;
-    unsigned int dec_bytes;
 
     blkcipher_walk_init(&walk, dst, src, nbytes);
     err = blkcipher_walk_virt(desc, &walk);
 
-    while ((nbytes = dec_bytes = walk.nbytes)) {
-        u8 *iv = walk.iv;
-            dec_bytes -= (nbytes % AES_BLOCK_SIZE);
-            ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
-                       iv, dec_bytes, CRYPTO_DIR_DECRYPT, 0);
-        nbytes &= AES_BLOCK_SIZE - 1;
-        err = blkcipher_walk_done(desc, &walk, nbytes);
+    while ((nbytes = walk.nbytes)) {
+        ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr,
+                        walk.iv, nbytes, CRYPTO_DIR_DECRYPT, 0);
+        err = blkcipher_walk_done(desc, &walk, 0);
     }
 
     return err;
@@ -729,7 +720,7 @@ struct crypto_alg ifxdeu_ctr_basic_aes_alg = {
     .cra_driver_name    =   "ifxdeu-ctr(aes)",
     .cra_priority   =   400,
     .cra_flags      =   CRYPTO_ALG_TYPE_BLKCIPHER,
-    .cra_blocksize      =   AES_BLOCK_SIZE,
+    .cra_blocksize      =   1,
     .cra_ctxsize        =   sizeof(struct aes_ctx),
     .cra_type       =   &crypto_blkcipher_type,
     .cra_module     =   THIS_MODULE,
@@ -869,7 +860,7 @@ struct crypto_alg ifxdeu_ctr_rfc3686_aes_alg = {
     .cra_driver_name    =   "ifxdeu-ctr-rfc3686(aes)",
     .cra_priority       =   400,
     .cra_flags      	=   CRYPTO_ALG_TYPE_BLKCIPHER,
-    .cra_blocksize      =   AES_BLOCK_SIZE,
+    .cra_blocksize      =   1,
     .cra_ctxsize        =   sizeof(struct aes_ctx),
     .cra_type       	=   &crypto_blkcipher_type,
     .cra_module     	=   THIS_MODULE,
