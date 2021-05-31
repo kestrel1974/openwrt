@@ -658,16 +658,26 @@ int ctr_basic_aes_encrypt(struct skcipher_request *req)
 {
     struct aes_ctx *ctx = crypto_tfm_ctx(req->base.tfm);
     struct skcipher_walk walk;
-    unsigned int nbytes;
     int err;
+    unsigned int enc_bytes, nbytes;
 
     err = skcipher_walk_virt(&walk, req, false);
 
-    while ((nbytes = walk.nbytes)) {
+    while ((nbytes = enc_bytes = walk.nbytes) && (walk.nbytes >= AES_BLOCK_SIZE)) {
+            enc_bytes -= (nbytes % AES_BLOCK_SIZE);
+            ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
+                       walk.iv, enc_bytes, CRYPTO_DIR_ENCRYPT, 0);
+        nbytes &= AES_BLOCK_SIZE - 1;
+        err = skcipher_walk_done(&walk, nbytes);
+    }
+
+    /* to handle remaining bytes < AES_BLOCK_SIZE */
+    if (walk.nbytes) {
         ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr,
-                        walk.iv, nbytes, CRYPTO_DIR_ENCRYPT, 0);
+                       walk.iv, walk.nbytes, CRYPTO_DIR_ENCRYPT, 0);
         err = skcipher_walk_done(&walk, 0);
     }
+
     return err;
 }
 
@@ -681,14 +691,23 @@ int ctr_basic_aes_decrypt(struct skcipher_request *req)
 {
     struct aes_ctx *ctx = crypto_tfm_ctx(req->base.tfm);
     struct skcipher_walk walk;
-    unsigned int nbytes;
     int err;
+    unsigned int dec_bytes, nbytes;
 
     err = skcipher_walk_virt(&walk, req, false);
 
-    while ((nbytes = walk.nbytes)) {
+    while ((nbytes = dec_bytes = walk.nbytes) && (walk.nbytes >= AES_BLOCK_SIZE)) {
+            dec_bytes -= (nbytes % AES_BLOCK_SIZE);
+            ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
+                       walk.iv, dec_bytes, CRYPTO_DIR_DECRYPT, 0);
+        nbytes &= AES_BLOCK_SIZE - 1;
+        err = skcipher_walk_done(&walk, nbytes);
+    }
+
+    /* to handle remaining bytes < AES_BLOCK_SIZE */
+    if (walk.nbytes) {
         ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr,
-                        walk.iv, nbytes, CRYPTO_DIR_DECRYPT, 0);
+                       walk.iv, walk.nbytes, CRYPTO_DIR_DECRYPT, 0);
         err = skcipher_walk_done(&walk, 0);
     }
 
@@ -710,6 +729,7 @@ struct skcipher_alg ifxdeu_ctr_basic_aes_alg = {
     .min_keysize             =   AES_MIN_KEY_SIZE,
     .max_keysize             =   AES_MAX_KEY_SIZE,
     .ivsize                  =   AES_BLOCK_SIZE,
+    .walksize                =   AES_BLOCK_SIZE,
     .setkey                  =   aes_set_key_skcipher,
     .encrypt                 =   ctr_basic_aes_encrypt,
     .decrypt                 =   ctr_basic_aes_decrypt,
@@ -726,13 +746,12 @@ int ctr_rfc3686_aes_encrypt(struct skcipher_request *req)
 {
     struct aes_ctx *ctx = crypto_tfm_ctx(req->base.tfm);
     struct skcipher_walk walk;
-    unsigned int nbytes;
-    int err, bsize;
+    unsigned int nbytes, enc_bytes;
+    int err;
     u8 rfc3686_iv[16];
 
     err = skcipher_walk_virt(&walk, req, false);
     nbytes = walk.nbytes;
-    bsize = nbytes;
 
     /* set up counter block */
     memcpy(rfc3686_iv, ctx->nonce, CTR_RFC3686_NONCE_SIZE); 
@@ -742,22 +761,12 @@ int ctr_rfc3686_aes_encrypt(struct skcipher_request *req)
     *(__be32 *)(rfc3686_iv + CTR_RFC3686_NONCE_SIZE + CTR_RFC3686_IV_SIZE) =
         cpu_to_be32(1);
 
-    /* scatterlist source is the same size as request size, just process once */
-    if (nbytes == walk.nbytes) {
-	ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr,
-			rfc3686_iv, nbytes, CRYPTO_DIR_ENCRYPT, 0);
-	nbytes -= walk.nbytes;
-	err = skcipher_walk_done(&walk, nbytes);
-	return err;
-    }
-
-    while ((nbytes = walk.nbytes) && (walk.nbytes >= AES_BLOCK_SIZE)) {
-	ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr,
-			rfc3686_iv, nbytes, CRYPTO_DIR_ENCRYPT, 0);
-
-	nbytes -= walk.nbytes;
-	bsize -= walk.nbytes;
-	err = skcipher_walk_done(&walk, nbytes);
+    while ((nbytes = enc_bytes = walk.nbytes) && (walk.nbytes >= AES_BLOCK_SIZE)) {
+            enc_bytes -= (nbytes % AES_BLOCK_SIZE);
+            ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
+                       rfc3686_iv, enc_bytes, CRYPTO_DIR_ENCRYPT, 0);
+        nbytes &= AES_BLOCK_SIZE - 1;
+        err = skcipher_walk_done(&walk, nbytes);
     }
 
     /* to handle remaining bytes < AES_BLOCK_SIZE */
@@ -780,13 +789,12 @@ int ctr_rfc3686_aes_decrypt(struct skcipher_request *req)
 {
     struct aes_ctx *ctx = crypto_tfm_ctx(req->base.tfm);
     struct skcipher_walk walk;
-    unsigned int nbytes;
-    int err, bsize;
+    unsigned int nbytes, dec_bytes;
+    int err;
     u8 rfc3686_iv[16];
 
     err = skcipher_walk_virt(&walk, req, false);
     nbytes = walk.nbytes;
-    bsize = nbytes;
 
     /* set up counter block */
     memcpy(rfc3686_iv, ctx->nonce, CTR_RFC3686_NONCE_SIZE); 
@@ -796,28 +804,18 @@ int ctr_rfc3686_aes_decrypt(struct skcipher_request *req)
     *(__be32 *)(rfc3686_iv + CTR_RFC3686_NONCE_SIZE + CTR_RFC3686_IV_SIZE) =
         cpu_to_be32(1);
 
-    /* scatterlist source is the same size as request size, just process once */
-    if (nbytes == walk.nbytes) {
-	ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr,
-			rfc3686_iv, nbytes, CRYPTO_DIR_ENCRYPT, 0);
-	nbytes -= walk.nbytes;
-	err = skcipher_walk_done(&walk, nbytes);
-	return err;
-    }
-
-    while ((nbytes = walk.nbytes) % (walk.nbytes >= AES_BLOCK_SIZE)) {
-	ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr,
-			rfc3686_iv, nbytes, CRYPTO_DIR_DECRYPT, 0);
-
-	nbytes -= walk.nbytes;
-	bsize -= walk.nbytes;
-	err = skcipher_walk_done(&walk, nbytes);
+    while ((nbytes = dec_bytes = walk.nbytes) && (walk.nbytes >= AES_BLOCK_SIZE)) {
+            dec_bytes -= (nbytes % AES_BLOCK_SIZE);
+            ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
+                       rfc3686_iv, dec_bytes, CRYPTO_DIR_DECRYPT, 0);
+        nbytes &= AES_BLOCK_SIZE - 1;
+        err = skcipher_walk_done(&walk, nbytes);
     }
 
     /* to handle remaining bytes < AES_BLOCK_SIZE */
     if (walk.nbytes) {
 	ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr,
-			rfc3686_iv, walk.nbytes, CRYPTO_DIR_ENCRYPT, 0);
+			rfc3686_iv, walk.nbytes, CRYPTO_DIR_DECRYPT, 0);
 	err = skcipher_walk_done(&walk, 0);
     }
 
@@ -839,6 +837,7 @@ struct skcipher_alg ifxdeu_ctr_rfc3686_aes_alg = {
     .min_keysize             =   AES_MIN_KEY_SIZE,
     .max_keysize             =   CTR_RFC3686_MAX_KEY_SIZE,
     .ivsize                  =   CTR_RFC3686_IV_SIZE,
+    .walksize                =   AES_BLOCK_SIZE,
     .setkey                  =   ctr_rfc3686_aes_set_key_skcipher,
     .encrypt                 =   ctr_rfc3686_aes_encrypt,
     .decrypt                 =   ctr_rfc3686_aes_decrypt,
