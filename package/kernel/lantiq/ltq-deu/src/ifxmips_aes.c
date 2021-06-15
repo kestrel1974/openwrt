@@ -344,7 +344,6 @@ int ctr_rfc3686_aes_set_key_skcipher (struct crypto_skcipher *tfm, const uint8_t
     return ctr_rfc3686_aes_set_key(crypto_skcipher_tfm(tfm), in_key, key_len);
 }
 
-
 /*! \fn void ifx_deu_aes (void *ctx_arg, u8 *out_arg, const u8 *in_arg, u8 *iv_arg, u32 nbytes, int encdec, int mode)
  *  \ingroup IFX_AES_FUNCTIONS
  *  \brief main interface with deu hardware in DMA mode
@@ -573,7 +572,6 @@ struct skcipher_alg ifxdeu_ecb_aes_alg = {
     .decrypt                 =   ecb_aes_decrypt,
 };
 
-
 /*! \fn int ecb_aes_encrypt(struct skcipher_req *req)
  *  \ingroup IFX_AES_FUNCTIONS
  *  \brief CBC AES encrypt using linux crypto skcipher
@@ -737,7 +735,6 @@ struct skcipher_alg ifxdeu_ofb_aes_alg = {
     .decrypt                 =   ofb_aes_decrypt,
 };
 
-
 /*! \fn int cfb_aes_encrypt(struct skcipher_req *req)
  *  \ingroup IFX_AES_FUNCTIONS
  *  \brief CFB AES encrypt using linux crypto skcipher
@@ -826,7 +823,6 @@ struct skcipher_alg ifxdeu_cfb_aes_alg = {
     .decrypt                 =   cfb_aes_decrypt,
 };
 
-
 /*! \fn int ctr_basic_aes_encrypt(struct skcipher_req *req)
  *  \ingroup IFX_AES_FUNCTIONS
  *  \brief Counter mode AES encrypt using linux crypto skcipher
@@ -913,7 +909,6 @@ struct skcipher_alg ifxdeu_ctr_basic_aes_alg = {
     .encrypt                 =   ctr_basic_aes_encrypt,
     .decrypt                 =   ctr_basic_aes_decrypt,
 };
-
 
 /*! \fn int ctr_rfc3686_aes_encrypt(struct skcipher_req *req)
  *  \ingroup IFX_AES_FUNCTIONS
@@ -1021,7 +1016,6 @@ struct skcipher_alg ifxdeu_ctr_rfc3686_aes_alg = {
     .encrypt                 =   ctr_rfc3686_aes_encrypt,
     .decrypt                 =   ctr_rfc3686_aes_decrypt,
 };
-
 
 /*! \fn int ifxdeu_init_aes (void)
  *  \ingroup IFX_AES_FUNCTIONS
