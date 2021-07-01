@@ -346,14 +346,14 @@ static int md5_hmac_final_impl(struct shash_desc *desc, u8 *out, bool hash_final
     return 0;
 }
 
-/*! \fn void md5_hmac_init_tfm(struct crypto_shash *tfm)
+/*! \fn void md5_hmac_init_tfm(struct crypto_tfm *tfm)
  *  \ingroup IFX_MD5_HMAC_FUNCTIONS
  *  \brief initialize pointers in md5_hmac_ctx
  *  \param tfm linux crypto algo transform
 */
-static int md5_hmac_init_tfm(struct crypto_shash *tfm)
+static int md5_hmac_init_tfm(struct crypto_tfm *tfm)
 {
-    struct md5_hmac_ctx *mctx = crypto_shash_ctx(tfm);
+    struct md5_hmac_ctx *mctx = crypto_tfm_ctx(tfm);
     mctx->temp = kzalloc(4 * MD5_HMAC_DBN_TEMP_SIZE, GFP_KERNEL);
     if (IS_ERR(mctx->temp)) return PTR_ERR(mctx->temp);
     mctx->desc = kzalloc(sizeof(struct shash_desc), GFP_KERNEL);
@@ -362,14 +362,14 @@ static int md5_hmac_init_tfm(struct crypto_shash *tfm)
     return 0;
 }
 
-/*! \fn void md5_hmac_exit_tfm(struct crypto_shash *tfm)
+/*! \fn void md5_hmac_exit_tfm(struct crypto_tfm *tfm)
  *  \ingroup IFX_MD5_HMAC_FUNCTIONS
  *  \brief free pointers in md5_hmac_ctx
  *  \param tfm linux crypto algo transform
 */
-static void md5_hmac_exit_tfm(struct crypto_shash *tfm)
+static void md5_hmac_exit_tfm(struct crypto_tfm *tfm)
 {
-    struct md5_hmac_ctx *mctx = crypto_shash_ctx(tfm);
+    struct md5_hmac_ctx *mctx = crypto_tfm_ctx(tfm);
     kfree(mctx->temp);
     kfree(mctx->desc);
 }
@@ -383,8 +383,6 @@ static struct shash_alg ifxdeu_md5_hmac_alg = {
     .update             =       md5_hmac_update,
     .final              =       md5_hmac_final,
     .setkey             =       md5_hmac_setkey,
-    .init_tfm           =       md5_hmac_init_tfm,
-    .exit_tfm           =       md5_hmac_exit_tfm,
     .descsize           =       sizeof(struct md5_hmac_ctx),
     .base               =       {
         .cra_name       =       "hmac(md5)",
@@ -394,6 +392,8 @@ static struct shash_alg ifxdeu_md5_hmac_alg = {
         .cra_flags      =       CRYPTO_ALG_TYPE_HASH | CRYPTO_ALG_KERN_DRIVER_ONLY,
         .cra_blocksize  =       MD5_HMAC_BLOCK_SIZE,
         .cra_module     =       THIS_MODULE,
+        .cra_init       =       md5_hmac_init_tfm,
+        .cra_exit       =       md5_hmac_exit_tfm,
         }
 };
 

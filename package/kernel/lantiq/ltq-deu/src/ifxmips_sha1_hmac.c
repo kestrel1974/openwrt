@@ -362,14 +362,14 @@ static int sha1_hmac_final_impl(struct shash_desc *desc, u8 *out, bool hash_fina
 
 }
 
-/*! \fn void sha1_hmac_init_tfm(struct crypto_shash *tfm)
+/*! \fn void sha1_hmac_init_tfm(struct crypto_tfm *tfm)
  *  \ingroup IFX_SHA1_HMAC_FUNCTIONS
  *  \brief initialize pointers in sha1_hmac_ctx
  *  \param tfm linux crypto algo transform
 */
-static int sha1_hmac_init_tfm(struct crypto_shash *tfm)
+static int sha1_hmac_init_tfm(struct crypto_tfm *tfm)
 {
-    struct sha1_hmac_ctx *sctx = crypto_shash_ctx(tfm);
+    struct sha1_hmac_ctx *sctx = crypto_tfm_ctx(tfm);
     sctx->temp = kzalloc(4 * SHA1_HMAC_DBN_TEMP_SIZE, GFP_KERNEL);
     if (IS_ERR(sctx->temp)) return PTR_ERR(sctx->temp);
     sctx->desc = kzalloc(sizeof(struct shash_desc), GFP_KERNEL);
@@ -378,14 +378,14 @@ static int sha1_hmac_init_tfm(struct crypto_shash *tfm)
     return 0;
 }
 
-/*! \fn void sha1_hmac_exit_tfm(struct crypto_shash *tfm)
+/*! \fn void sha1_hmac_exit_tfm(struct crypto_tfm *tfm)
  *  \ingroup IFX_SHA1_HMAC_FUNCTIONS
  *  \brief free pointers in sha1_hmac_ctx
  *  \param tfm linux crypto algo transform
 */
-static void sha1_hmac_exit_tfm(struct crypto_shash *tfm)
+static void sha1_hmac_exit_tfm(struct crypto_tfm *tfm)
 {
-    struct sha1_hmac_ctx *sctx = crypto_shash_ctx(tfm);
+    struct sha1_hmac_ctx *sctx = crypto_tfm_ctx(tfm);
     kfree(sctx->temp);
     kfree(sctx->desc);
 }
@@ -400,8 +400,6 @@ static struct shash_alg ifxdeu_sha1_hmac_alg = {
     .update             =       sha1_hmac_update,
     .final              =       sha1_hmac_final,
     .setkey             =       sha1_hmac_setkey,
-    .init_tfm           =       sha1_hmac_init_tfm,
-    .exit_tfm           =       sha1_hmac_exit_tfm,
     .descsize           =       sizeof(struct sha1_hmac_ctx),
     .base               =       {
         .cra_name       =       "hmac(sha1)",
@@ -411,6 +409,8 @@ static struct shash_alg ifxdeu_sha1_hmac_alg = {
         .cra_flags      =       CRYPTO_ALG_TYPE_HASH | CRYPTO_ALG_KERN_DRIVER_ONLY,
         .cra_blocksize  =       SHA1_HMAC_BLOCK_SIZE,
         .cra_module     =       THIS_MODULE,
+        .cra_init       =       sha1_hmac_init_tfm,
+        .cra_exit       =       sha1_hmac_exit_tfm,
         }
 };
 
